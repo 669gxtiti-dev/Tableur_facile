@@ -1,0 +1,1924 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SheetFlow</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root {
+  --bg: #080810;
+  --s1: #10101a;
+  --s2: #16161f;
+  --s3: #1e1e2a;
+  --s4: #272733;
+  --border: #2e2e3e;
+  --border2: #3a3a4e;
+  --accent: #7c6dff;
+  --accent-glow: rgba(124,109,255,0.15);
+  --green: #00e5a0;
+  --green-glow: rgba(0,229,160,0.12);
+  --red: #ff4d6a;
+  --warn: #ffb547;
+  --text: #e2e2f0;
+  --t2: #8888aa;
+  --t3: #55556a;
+  --cell-h: 26px;
+  --hdr-h: 32px;
+  --rnum-w: 46px;
+  --col-w: 96px;
+  --font: 'Syne', sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html,body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: var(--font); font-size: 13px; }
+
+/* ═══════════════════════════════ AUTH SCREEN ═══════════════════════════════ */
+#auth-screen {
+  position: fixed; inset: 0; z-index: 1000;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg);
+}
+#auth-screen::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse 60% 50% at 50% 40%, rgba(124,109,255,0.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+.auth-card {
+  background: var(--s2);
+  border: 1px solid var(--border2);
+  border-radius: 20px;
+  padding: 48px 40px;
+  width: 360px;
+  text-align: center;
+  position: relative;
+  box-shadow: 0 40px 80px rgba(0,0,0,0.6);
+}
+.auth-logo { font-size: 28px; font-weight: 800; color: var(--accent); letter-spacing: -1px; margin-bottom: 4px; }
+.auth-logo span { color: var(--green); }
+.auth-sub { color: var(--t2); font-size: 13px; margin-bottom: 32px; }
+.auth-title { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+.auth-desc { color: var(--t2); font-size: 12px; line-height: 1.6; margin-bottom: 28px; }
+.google-btn {
+  width: 100%;
+  height: 46px;
+  background: #fff;
+  border: none;
+  border-radius: 12px;
+  color: #333;
+  font-family: var(--font);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  transition: opacity 0.2s, transform 0.15s;
+  margin-bottom: 12px;
+}
+.google-btn:hover { opacity: 0.92; transform: translateY(-1px); }
+.guest-btn {
+  width: 100%;
+  height: 40px;
+  background: transparent;
+  border: 1px solid var(--border2);
+  border-radius: 10px;
+  color: var(--t2);
+  font-family: var(--font);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.guest-btn:hover { border-color: var(--accent); color: var(--text); }
+.auth-note { color: var(--t3); font-size: 11px; margin-top: 20px; }
+
+/* ═══════════════════════════════ APP LAYOUT ═══════════════════════════════ */
+#app { display: none; flex-direction: column; height: 100vh; }
+#app.visible { display: flex; }
+
+/* ── TOPBAR ── */
+#topbar {
+  height: 46px; flex-shrink: 0;
+  background: var(--s1);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 8px;
+  padding: 0 10px;
+}
+.logo-sm { font-size: 15px; font-weight: 800; color: var(--accent); letter-spacing: -0.5px; white-space: nowrap; }
+.logo-sm span { color: var(--green); }
+#file-name {
+  background: transparent; border: 1px solid transparent;
+  color: var(--text); font-family: var(--font); font-size: 13px; font-weight: 600;
+  padding: 3px 8px; border-radius: 6px; outline: none; min-width: 100px; max-width: 180px;
+  transition: all 0.2s;
+}
+#file-name:hover,#file-name:focus { border-color: var(--border2); background: var(--s3); }
+.sep { width: 1px; height: 22px; background: var(--border); margin: 0 2px; flex-shrink: 0; }
+.top-btn {
+  height: 30px; padding: 0 10px;
+  background: var(--s3); border: 1px solid var(--border); border-radius: 7px;
+  color: var(--text); font-family: var(--font); font-size: 11px; font-weight: 600;
+  cursor: pointer; display: flex; align-items: center; gap: 5px; white-space: nowrap;
+  transition: all 0.15s; flex-shrink: 0;
+}
+.top-btn:hover { border-color: var(--accent); color: var(--accent); }
+.top-btn.green { background: var(--green); border-color: var(--green); color: #000; }
+.top-btn.green:hover { opacity: 0.85; }
+.top-btn.purple { background: var(--accent); border-color: var(--accent); color: #fff; }
+.top-btn.purple:hover { opacity: 0.85; }
+#spacer { flex: 1; }
+.user-chip {
+  display: flex; align-items: center; gap: 7px;
+  background: var(--s3); border: 1px solid var(--border);
+  border-radius: 20px; padding: 4px 10px 4px 4px;
+  cursor: pointer; transition: border-color 0.2s;
+}
+.user-chip:hover { border-color: var(--accent); }
+.user-avatar {
+  width: 24px; height: 24px; border-radius: 50%;
+  background: var(--accent); display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; color: #fff; overflow: hidden; flex-shrink: 0;
+}
+.user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.user-name { font-size: 12px; font-weight: 600; max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#save-indicator { font-size: 11px; color: var(--t3); white-space: nowrap; }
+#save-indicator.saving { color: var(--warn); }
+#save-indicator.saved { color: var(--green); }
+
+/* Mode toggle */
+#mode-toggle { display: flex; background: var(--s3); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; flex-shrink: 0; }
+.mdbtn { padding: 4px 11px; cursor: pointer; font-size: 11px; font-weight: 700; color: var(--t2); background: transparent; border: none; font-family: var(--font); transition: all 0.15s; }
+.mdbtn.active { background: var(--accent); color: #fff; }
+
+/* ── TOOLBAR ── */
+#toolbar {
+  height: 40px; flex-shrink: 0;
+  background: var(--s1); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; padding: 0 6px; gap: 1px; overflow-x: auto;
+}
+#toolbar::-webkit-scrollbar { height: 0; }
+.tg { display: flex; align-items: center; gap: 1px; }
+.tsep { width: 1px; height: 20px; background: var(--border); margin: 0 4px; }
+.tbtn {
+  min-width: 28px; height: 28px; padding: 0 5px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 5px; cursor: pointer; color: var(--t2);
+  border: none; background: transparent; font-family: var(--font);
+  font-size: 12px; font-weight: 700; transition: all 0.12s;
+  white-space: nowrap; position: relative;
+}
+.tbtn:hover { background: var(--s4); color: var(--text); }
+.tbtn.on { background: var(--accent-glow); color: var(--accent); }
+.tbtn[data-tip]:hover::after {
+  content: attr(data-tip);
+  position: absolute; top: 32px; left: 50%; transform: translateX(-50%);
+  background: var(--s4); color: var(--text); font-size: 11px; font-weight: 500;
+  padding: 3px 8px; border-radius: 5px; white-space: nowrap; z-index: 999;
+  border: 1px solid var(--border2); pointer-events: none;
+}
+.fsel {
+  height: 26px; background: var(--s3); border: 1px solid var(--border);
+  border-radius: 5px; color: var(--text); font-family: var(--font);
+  font-size: 11px; padding: 0 5px; outline: none; cursor: pointer;
+}
+#sel-font { width: 100px; }
+#sel-size { width: 46px; }
+.clr-wrap { position: relative; display: flex; align-items: center; }
+.clr-btn {
+  min-width: 28px; height: 28px; border-radius: 5px; border: none;
+  background: var(--s3); cursor: pointer; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 1px; padding: 3px 5px;
+  border: 1px solid var(--border); transition: border-color 0.12s;
+}
+.clr-btn:hover { border-color: var(--accent); }
+.clr-label { font-size: 11px; font-weight: 700; color: var(--text); font-family: var(--font); line-height: 1; }
+.clr-bar { width: 16px; height: 3px; border-radius: 2px; }
+.clr-inp { position: absolute; width: 0; height: 0; opacity: 0; }
+
+/* ── QUICK FORMULA BAR (simple) ── */
+#qfbar {
+  display: none; height: 34px; flex-shrink: 0;
+  background: var(--s1); border-bottom: 1px solid var(--border);
+  align-items: center; padding: 0 8px; gap: 4px; overflow-x: auto;
+}
+#qfbar::-webkit-scrollbar { height: 0; }
+body.simple #qfbar { display: flex; }
+.qfbtn {
+  padding: 3px 10px; background: var(--s3); border: 1px solid var(--border);
+  border-radius: 5px; color: var(--t2); font-size: 11px; font-weight: 600;
+  cursor: pointer; white-space: nowrap; font-family: var(--mono); transition: all 0.12s;
+}
+.qfbtn:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+/* ── FORMULA BAR ── */
+#fbar {
+  height: 34px; flex-shrink: 0;
+  background: var(--s1); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center;
+}
+#cell-ref {
+  width: 72px; height: 100%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--mono); font-size: 12px; font-weight: 500; color: var(--green);
+  border-right: 1px solid var(--border); background: var(--s2);
+}
+#fbar-fx {
+  width: 32px; height: 100%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--mono); font-size: 13px; color: var(--accent); font-weight: 600;
+  border-right: 1px solid var(--border);
+}
+#formula-input {
+  flex: 1; height: 100%; background: transparent; border: none; outline: none;
+  color: var(--text); font-family: var(--mono); font-size: 12px; padding: 0 10px;
+}
+#formula-input:focus { background: var(--s2); }
+
+/* ── SHEET AREA ── */
+#sheet-area { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+#grid-wrap { flex: 1; overflow: auto; }
+#grid-wrap::-webkit-scrollbar { width: 8px; height: 8px; }
+#grid-wrap::-webkit-scrollbar-track { background: var(--s1); }
+#grid-wrap::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+#grid-wrap::-webkit-scrollbar-corner { background: var(--s1); }
+
+#grid {
+  border-collapse: collapse; table-layout: fixed;
+  font-family: var(--mono); font-size: 12px;
+}
+.corner {
+  width: var(--rnum-w); height: var(--hdr-h);
+  background: var(--s2); border-right: 1px solid var(--border);
+  border-bottom: 2px solid var(--border2);
+  position: sticky; top: 0; left: 0; z-index: 20; cursor: pointer;
+}
+.corner:hover { background: var(--s4); }
+.ch {
+  height: var(--hdr-h); min-width: var(--col-w);
+  background: var(--s2); border-right: 1px solid var(--border);
+  border-bottom: 2px solid var(--border2);
+  text-align: center; color: var(--t2);
+  font-family: var(--font); font-size: 11px; font-weight: 700;
+  position: sticky; top: 0; z-index: 10;
+  cursor: pointer; user-select: none; letter-spacing: 0.5px;
+  transition: all 0.1s;
+}
+.ch:hover,.ch.sel { background: var(--s4); color: var(--accent); }
+.rh {
+  width: var(--rnum-w); height: var(--cell-h);
+  background: var(--s2); border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  text-align: center; color: var(--t3);
+  font-family: var(--font); font-size: 11px; font-weight: 600;
+  position: sticky; left: 0; z-index: 5;
+  cursor: pointer; user-select: none; transition: all 0.1s;
+}
+.rh:hover,.rh.sel { background: var(--s4); color: var(--accent); }
+td.cell {
+  height: var(--cell-h); min-width: var(--col-w);
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 0 5px; outline: none;
+  cursor: cell; overflow: hidden;
+  white-space: nowrap; text-overflow: ellipsis;
+  color: var(--text); background: transparent;
+  transition: background 0.05s;
+  max-width: var(--col-w);
+}
+td.cell:hover { background: rgba(124,109,255,0.04); }
+td.cell.selected { background: var(--accent-glow) !important; outline: 2px solid var(--accent); outline-offset: -1px; z-index: 2; position: relative; }
+td.cell.in-range { background: rgba(124,109,255,0.07) !important; }
+td.cell.editing { background: var(--s3) !important; outline: 2px solid var(--green) !important; outline-offset: -1px; }
+td.cell.error { color: var(--red); }
+/* Alignment */
+td.cell.al { text-align: left; }
+td.cell.ac { text-align: center; }
+td.cell.ar { text-align: right; }
+/* Format */
+td.cell.bold { font-weight: 700; }
+td.cell.italic { font-style: italic; }
+td.cell.underline { text-decoration: underline; }
+td.cell.strike { text-decoration: line-through; }
+
+/* ── SHEET TABS ── */
+#tabs-bar {
+  height: 34px; flex-shrink: 0;
+  background: var(--s1); border-top: 1px solid var(--border);
+  display: flex; align-items: flex-end; padding: 0 8px; gap: 3px; overflow-x: auto;
+}
+#tabs-bar::-webkit-scrollbar { height: 0; }
+.sheet-tab {
+  height: 28px; padding: 0 14px;
+  background: var(--s3); border: 1px solid var(--border);
+  border-bottom: none; border-radius: 6px 6px 0 0;
+  color: var(--t2); font-size: 12px; font-weight: 600;
+  cursor: pointer; display: flex; align-items: center; gap: 6px;
+  white-space: nowrap; transition: all 0.12s; user-select: none;
+}
+.sheet-tab:hover { color: var(--text); border-color: var(--border2); }
+.sheet-tab.active { background: var(--s2); border-color: var(--accent); color: var(--accent); }
+.tab-close { color: var(--t3); font-size: 14px; line-height: 1; transition: color 0.12s; }
+.tab-close:hover { color: var(--red); }
+.add-tab {
+  height: 28px; width: 28px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--t3); font-size: 18px; cursor: pointer;
+  border-radius: 6px 6px 0 0; transition: all 0.12s;
+}
+.add-tab:hover { color: var(--green); background: var(--s3); }
+
+/* ── CONTEXT MENU ── */
+#ctx-menu {
+  position: fixed; z-index: 500; display: none;
+  background: var(--s2); border: 1px solid var(--border2);
+  border-radius: 10px; padding: 6px; min-width: 170px;
+  box-shadow: 0 16px 40px rgba(0,0,0,0.5);
+}
+.ctx-item {
+  padding: 7px 12px; border-radius: 6px; cursor: pointer;
+  display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 500;
+  color: var(--t2); transition: all 0.1s;
+}
+.ctx-item:hover { background: var(--s4); color: var(--text); }
+.ctx-item.danger:hover { background: rgba(255,77,106,0.1); color: var(--red); }
+.ctx-sep { height: 1px; background: var(--border); margin: 4px 6px; }
+
+/* ── PANELS ── */
+.panel-overlay {
+  position: fixed; inset: 0; z-index: 200; background: rgba(0,0,0,0.6);
+  display: none; align-items: center; justify-content: center;
+  backdrop-filter: blur(4px);
+}
+.panel-overlay.open { display: flex; }
+.panel {
+  background: var(--s2); border: 1px solid var(--border2);
+  border-radius: 16px; padding: 28px; width: 480px; max-height: 80vh;
+  overflow-y: auto; box-shadow: 0 40px 80px rgba(0,0,0,0.6);
+}
+.panel::-webkit-scrollbar { width: 4px; }
+.panel::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+.panel h2 { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+.panel p { color: var(--t2); font-size: 12px; margin-bottom: 20px; }
+.panel-close {
+  float: right; background: none; border: none; color: var(--t2);
+  font-size: 20px; cursor: pointer; padding: 0; margin-top: -4px;
+  transition: color 0.12s;
+}
+.panel-close:hover { color: var(--text); }
+
+/* History list */
+.hist-item {
+  background: var(--s3); border: 1px solid var(--border);
+  border-radius: 10px; padding: 12px 14px; margin-bottom: 8px;
+  display: flex; align-items: center; gap: 12px; cursor: pointer;
+  transition: all 0.15s;
+}
+.hist-item:hover { border-color: var(--accent); }
+.hist-icon { width: 36px; height: 36px; background: var(--accent-glow); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 16px; }
+.hist-info { flex: 1; min-width: 0; }
+.hist-name { font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hist-meta { font-size: 11px; color: var(--t2); margin-top: 2px; }
+.hist-badge { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px; background: var(--s4); color: var(--t2); }
+.hist-badge.active { background: var(--green-glow); color: var(--green); }
+.hist-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.hist-btn {
+  padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600;
+  cursor: pointer; border: 1px solid var(--border); background: var(--s4);
+  color: var(--t2); font-family: var(--font); transition: all 0.12s;
+}
+.hist-btn:hover { border-color: var(--accent); color: var(--accent); }
+.hist-btn.danger:hover { border-color: var(--red); color: var(--red); }
+
+/* Share panel */
+.share-box {
+  background: var(--s3); border: 1px solid var(--border);
+  border-radius: 10px; padding: 14px; margin-bottom: 12px;
+}
+.share-label { font-size: 11px; font-weight: 700; color: var(--t2); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+.share-link {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--s4); border: 1px solid var(--border2);
+  border-radius: 8px; padding: 8px 12px;
+}
+.share-link span { flex: 1; font-family: var(--mono); font-size: 11px; color: var(--t2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.copy-btn {
+  padding: 4px 12px; background: var(--accent); border: none; border-radius: 6px;
+  color: #fff; font-size: 11px; font-weight: 700; cursor: pointer; font-family: var(--font);
+  transition: opacity 0.15s; flex-shrink: 0;
+}
+.copy-btn:hover { opacity: 0.85; }
+.copy-btn.copied { background: var(--green); }
+
+/* Export options */
+.export-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.export-opt {
+  background: var(--s3); border: 1px solid var(--border); border-radius: 10px;
+  padding: 14px; cursor: pointer; text-align: center; transition: all 0.15s;
+}
+.export-opt:hover { border-color: var(--accent); background: var(--accent-glow); }
+.export-opt .ico { font-size: 24px; margin-bottom: 6px; }
+.export-opt .name { font-size: 13px; font-weight: 700; }
+.export-opt .desc { font-size: 11px; color: var(--t2); margin-top: 2px; }
+
+/* Versions */
+.ver-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; background: var(--s3); border: 1px solid var(--border);
+  border-radius: 8px; margin-bottom: 6px; cursor: pointer; transition: all 0.15s;
+}
+.ver-item:hover { border-color: var(--accent); }
+.ver-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--border2); flex-shrink: 0; }
+.ver-dot.current { background: var(--green); box-shadow: 0 0 6px var(--green); }
+.ver-info { flex: 1; }
+.ver-time { font-size: 12px; font-weight: 600; }
+.ver-cells { font-size: 11px; color: var(--t2); }
+.ver-restore {
+  padding: 4px 10px; background: transparent; border: 1px solid var(--border2);
+  border-radius: 6px; color: var(--t2); font-size: 11px; font-weight: 600;
+  cursor: pointer; font-family: var(--font); transition: all 0.12s;
+}
+.ver-restore:hover { border-color: var(--green); color: var(--green); }
+
+/* Pro tools hidden in simple */
+body.simple .pro-only { display: none !important; }
+
+/* Toast */
+#toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
+  background: var(--s4); border: 1px solid var(--border2);
+  border-radius: 10px; padding: 10px 18px;
+  font-size: 13px; font-weight: 600; color: var(--text);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  opacity: 0; transition: all 0.25s; z-index: 9999; white-space: nowrap;
+}
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+#toast.ok { border-color: var(--green); color: var(--green); }
+#toast.err { border-color: var(--red); color: var(--red); }
+
+/* Mobile enter key */
+#mobile-bar {
+  display: none;
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: var(--s2); border-top: 1px solid var(--border);
+  padding: 8px 12px; gap: 8px; z-index: 300;
+}
+@media (max-width: 768px) {
+  #mobile-bar { display: flex; }
+  #app { padding-bottom: 52px; }
+}
+.mob-btn {
+  flex: 1; height: 40px; background: var(--s3); border: 1px solid var(--border);
+  border-radius: 8px; color: var(--text); font-family: var(--font);
+  font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.12s;
+}
+.mob-btn:hover,.mob-btn:active { background: var(--accent); border-color: var(--accent); }
+.mob-btn.confirm { background: var(--green); border-color: var(--green); color: #000; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════ AUTH ═══════════════════ -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <div class="auth-logo">Sheet<span>Flow</span></div>
+    <div class="auth-sub">Tableur intelligent · Gratuit</div>
+    <div class="auth-title">Bienvenue 👋</div>
+    <div class="auth-desc">Connecte-toi pour sauvegarder tes fichiers, accéder à l'historique et partager tes tableaux.</div>
+    <button class="google-btn" onclick="signInGoogle()">
+      <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+      Continuer avec Google
+    </button>
+    <button class="guest-btn" onclick="continueGuest()">Continuer sans compte (mode invité)</button>
+    <div class="auth-note">⚡ Les fichiers invités sont sauvegardés localement uniquement</div>
+  </div>
+</div>
+
+<!-- ═══════════════════ APP ═══════════════════ -->
+<div id="app">
+
+  <!-- TOPBAR -->
+  <div id="topbar">
+    <div class="logo-sm">Sheet<span>Flow</span></div>
+    <div class="sep"></div>
+    <input id="file-name" value="Nouveau fichier" spellcheck="false" title="Renommer">
+    <div class="sep"></div>
+    <button class="top-btn" onclick="newFile()">＋ Nouveau</button>
+    <button class="top-btn" onclick="showHistory()">📁 Fichiers</button>
+    <button class="top-btn pro-only" onclick="showVersions()">🕐 Versions</button>
+    <button class="top-btn" onclick="showShare()">🔗 Partager</button>
+    <button class="top-btn" onclick="showExport()">⬇ Exporter</button>
+    <div id="spacer"></div>
+    <span id="save-indicator">●&nbsp;Sauvegardé</span>
+    <div class="sep"></div>
+    <div id="mode-toggle">
+      <button class="mdbtn active" onclick="setMode('pro')" id="btn-pro">Pro</button>
+      <button class="mdbtn" onclick="setMode('simple')" id="btn-simple">Simple</button>
+    </div>
+    <div class="sep"></div>
+    <div class="user-chip" onclick="showUserMenu()" id="user-chip">
+      <div class="user-avatar" id="user-avatar">?</div>
+      <span class="user-name" id="user-name">Invité</span>
+    </div>
+  </div>
+
+  <!-- TOOLBAR -->
+  <div id="toolbar">
+    <div class="tg">
+      <select class="fsel" id="sel-font" onchange="applyFont(this.value)">
+        <option value="JetBrains Mono">JetBrains Mono</option>
+        <option value="Arial">Arial</option>
+        <option value="Georgia">Georgia</option>
+        <option value="Courier New">Courier New</option>
+        <option value="Verdana">Verdana</option>
+      </select>
+      <select class="fsel" id="sel-size" onchange="applyFontSize(this.value)">
+        <option>10</option><option>11</option><option selected>12</option>
+        <option>14</option><option>16</option><option>18</option>
+        <option>20</option><option>24</option><option>28</option><option>36</option>
+      </select>
+    </div>
+    <div class="tsep"></div>
+    <div class="tg">
+      <button class="tbtn" id="btn-bold" onclick="toggleFmt('bold')" data-tip="Gras (Ctrl+B)"><b>B</b></button>
+      <button class="tbtn" id="btn-italic" onclick="toggleFmt('italic')" data-tip="Italique (Ctrl+I)"><i>I</i></button>
+      <button class="tbtn" id="btn-underline" onclick="toggleFmt('underline')" data-tip="Souligné (Ctrl+U)"><u>U</u></button>
+      <button class="tbtn pro-only" id="btn-strike" onclick="toggleFmt('strike')" data-tip="Barré"><s>S</s></button>
+    </div>
+    <div class="tsep"></div>
+    <div class="tg">
+      <div class="clr-wrap">
+        <button class="clr-btn" onclick="document.getElementById('inp-fg').click()" data-tip="Couleur texte">
+          <span class="clr-label">A</span>
+          <div class="clr-bar" id="bar-fg" style="background:#e2e2f0"></div>
+        </button>
+        <input type="color" id="inp-fg" value="#e2e2f0" onchange="applyColor('fg',this.value)">
+      </div>
+      <div class="clr-wrap pro-only">
+        <button class="clr-btn" onclick="document.getElementById('inp-bg').click()" data-tip="Couleur fond">
+          <span class="clr-label" style="font-size:14px">▓</span>
+          <div class="clr-bar" id="bar-bg" style="background:transparent;border:1px solid #3a3a4e"></div>
+        </button>
+        <input type="color" id="inp-bg" value="#16161f" onchange="applyColor('bg',this.value)">
+      </div>
+    </div>
+    <div class="tsep"></div>
+    <div class="tg">
+      <button class="tbtn" onclick="applyAlign('l')" data-tip="Aligner gauche">⬅</button>
+      <button class="tbtn" onclick="applyAlign('c')" data-tip="Centrer">☰</button>
+      <button class="tbtn" onclick="applyAlign('r')" data-tip="Aligner droite">➡</button>
+    </div>
+    <div class="tsep pro-only"></div>
+    <div class="tg pro-only">
+      <button class="tbtn" onclick="mergeCells()" data-tip="Fusionner cellules">⊞</button>
+      <button class="tbtn" onclick="insertRow()" data-tip="Insérer ligne">+↕</button>
+      <button class="tbtn" onclick="insertCol()" data-tip="Insérer colonne">+↔</button>
+      <button class="tbtn" onclick="deleteRow()" data-tip="Supprimer ligne" style="color:var(--red)">✕↕</button>
+      <button class="tbtn" onclick="deleteCol()" data-tip="Supprimer colonne" style="color:var(--red)">✕↔</button>
+    </div>
+    <div class="tsep"></div>
+    <div class="tg">
+      <button class="tbtn" onclick="undoAction()" data-tip="Annuler (Ctrl+Z)">↩</button>
+      <button class="tbtn" onclick="redoAction()" data-tip="Rétablir (Ctrl+Y)">↪</button>
+    </div>
+    <div class="tsep pro-only"></div>
+    <div class="tg pro-only">
+      <button class="tbtn" onclick="autoSum()" data-tip="Somme auto">Σ</button>
+      <button class="tbtn" onclick="sortAsc()" data-tip="Trier A→Z">↑A</button>
+      <button class="tbtn" onclick="sortDesc()" data-tip="Trier Z→A">↓Z</button>
+      <button class="tbtn" onclick="freezeRow()" data-tip="Figer ligne">❄</button>
+    </div>
+  </div>
+
+  <!-- QUICK FORMULAS (simple mode) -->
+  <div id="qfbar">
+    <span style="font-size:11px;color:var(--t2);font-weight:700;margin-right:4px">FORMULES RAPIDES :</span>
+    <button class="qfbtn" onclick="insertFormula('SUM')">SOMME</button>
+    <button class="qfbtn" onclick="insertFormula('AVERAGE')">MOYENNE</button>
+    <button class="qfbtn" onclick="insertFormula('COUNT')">NB</button>
+    <button class="qfbtn" onclick="insertFormula('MAX')">MAX</button>
+    <button class="qfbtn" onclick="insertFormula('MIN')">MIN</button>
+    <button class="qfbtn" onclick="insertFormula('IF')">SI</button>
+    <button class="qfbtn" onclick="insertFormula('PERCENT')">%</button>
+    <button class="qfbtn" onclick="insertFormula('MARGIN')">MARGE</button>
+    <button class="qfbtn" onclick="insertFormula('TVA')">TVA</button>
+    <button class="qfbtn" onclick="insertFormula('HT')">HT→TTC</button>
+  </div>
+
+  <!-- FORMULA BAR -->
+  <div id="fbar">
+    <div id="cell-ref">A1</div>
+    <div id="fbar-fx">fx</div>
+    <input id="formula-input" placeholder="Entrez une valeur ou formule (ex: =SOMME(A1:A10))" 
+           oninput="onFormulaInput(this.value)"
+           onkeydown="onFormulaKey(event)">
+  </div>
+
+  <!-- SHEET AREA -->
+  <div id="sheet-area">
+    <div id="grid-wrap">
+      <table id="grid"></table>
+    </div>
+    <div id="tabs-bar">
+      <div id="tabs-list"></div>
+      <div class="add-tab" onclick="addSheet()" title="Ajouter une feuille">＋</div>
+    </div>
+  </div>
+</div>
+
+<!-- MOBILE BAR -->
+<div id="mobile-bar">
+  <button class="mob-btn" onclick="navCell('ArrowLeft')">◀</button>
+  <button class="mob-btn" onclick="navCell('ArrowUp')">▲</button>
+  <button class="mob-btn" onclick="navCell('ArrowDown')">▼</button>
+  <button class="mob-btn" onclick="navCell('ArrowRight')">▶</button>
+  <button class="mob-btn confirm" onclick="confirmCell()">✓ OK</button>
+</div>
+
+<!-- CONTEXT MENU -->
+<div id="ctx-menu">
+  <div class="ctx-item" onclick="ctxCopy()">📋 Copier</div>
+  <div class="ctx-item" onclick="ctxCut()">✂️ Couper</div>
+  <div class="ctx-item" onclick="ctxPaste()">📌 Coller</div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-item" onclick="insertRow()">➕ Insérer ligne</div>
+  <div class="ctx-item" onclick="insertCol()">➕ Insérer colonne</div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-item" onclick="autoSum()">Σ Somme auto</div>
+  <div class="ctx-item" onclick="clearSelection()">🗑 Effacer</div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-item danger" onclick="deleteRow()">✕ Supprimer ligne</div>
+</div>
+
+<!-- ═══ PANELS ═══ -->
+
+<!-- History panel -->
+<div class="panel-overlay" id="panel-history">
+  <div class="panel">
+    <button class="panel-close" onclick="closePanel('panel-history')">×</button>
+    <h2>📁 Mes fichiers</h2>
+    <p>Tous tes tableaux sauvegardés dans le cloud.</p>
+    <button class="top-btn green" style="margin-bottom:16px" onclick="newFile()">＋ Créer un nouveau fichier</button>
+    <div id="history-list"><div style="color:var(--t2);text-align:center;padding:20px">Chargement...</div></div>
+  </div>
+</div>
+
+<!-- Versions panel -->
+<div class="panel-overlay" id="panel-versions">
+  <div class="panel">
+    <button class="panel-close" onclick="closePanel('panel-versions')">×</button>
+    <h2>🕐 Historique des versions</h2>
+    <p>Restaure une version précédente de ce fichier.</p>
+    <div id="versions-list"><div style="color:var(--t2);text-align:center;padding:20px">Chargement...</div></div>
+  </div>
+</div>
+
+<!-- Share panel -->
+<div class="panel-overlay" id="panel-share">
+  <div class="panel">
+    <button class="panel-close" onclick="closePanel('panel-share')">×</button>
+    <h2>🔗 Partager</h2>
+    <p>Génère un lien pour partager ce tableau en lecture seule.</p>
+    <div class="share-box">
+      <div class="share-label">Lien de partage</div>
+      <div class="share-link">
+        <span id="share-url">Génération du lien...</span>
+        <button class="copy-btn" id="copy-link-btn" onclick="copyShareLink()">Copier</button>
+      </div>
+    </div>
+    <div class="share-box">
+      <div class="share-label">QR Code</div>
+      <div id="qr-placeholder" style="text-align:center;padding:16px;color:var(--t2);font-size:12px">
+        ▣ QR Code généré après copie du lien
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Export panel -->
+<div class="panel-overlay" id="panel-export">
+  <div class="panel">
+    <button class="panel-close" onclick="closePanel('panel-export')">×</button>
+    <h2>⬇ Exporter</h2>
+    <p>Choisis le format d'export pour ton fichier.</p>
+    <div class="export-grid">
+      <div class="export-opt" onclick="exportAs('html')">
+        <div class="ico">🌐</div>
+        <div class="name">HTML</div>
+        <div class="desc">Page web interactive</div>
+      </div>
+      <div class="export-opt" onclick="exportAs('csv')">
+        <div class="ico">📊</div>
+        <div class="name">CSV</div>
+        <div class="desc">Compatible Excel & Sheets</div>
+      </div>
+      <div class="export-opt" onclick="exportAs('json')">
+        <div class="ico">{ }</div>
+        <div class="name">JSON</div>
+        <div class="desc">Données structurées</div>
+      </div>
+      <div class="export-opt" onclick="exportAs('txt')">
+        <div class="ico">📄</div>
+        <div class="name">Texte</div>
+        <div class="desc">Format texte brut</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- Firebase SDKs -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, doc, setDoc, getDoc, collection, getDocs,
+         deleteDoc, query, orderBy, limit, serverTimestamp, addDoc }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAviiDdXz71Jr0XxHpuQJWKgEiQzlR5gRs",
+  authDomain: "flashmail-5650b.firebaseapp.com",
+  projectId: "flashmail-5650b",
+  storageBucket: "flashmail-5650b.firebasestorage.app",
+  messagingSenderId: "356335559074",
+  appId: "1:356335559074:web:6f580cbcef71d807aa92fb"
+};
+const fbApp = initializeApp(firebaseConfig);
+const auth = getAuth(fbApp);
+const db = getFirestore(fbApp);
+const provider = new GoogleAuthProvider();
+
+window._fb = { auth, db, provider, signInWithPopup, signOut, onAuthStateChanged,
+  doc, setDoc, getDoc, collection, getDocs, deleteDoc, query, orderBy, limit,
+  serverTimestamp, addDoc };
+
+onAuthStateChanged(auth, user => {
+  window._currentUser = user;
+  if (user) {
+    document.getElementById('user-avatar').textContent = user.displayName?.[0]?.toUpperCase() || 'U';
+    if (user.photoURL) {
+      document.getElementById('user-avatar').innerHTML = `<img src="${user.photoURL}">`;
+    }
+    document.getElementById('user-name').textContent = user.displayName || user.email;
+  } else {
+    document.getElementById('user-avatar').textContent = '👤';
+    document.getElementById('user-name').textContent = 'Invité';
+  }
+});
+</script>
+
+<script>
+// ══════════════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════════════
+const ROWS = 100, COLS = 26;
+let sheets = [{ name: 'Feuille 1', data: {}, formats: {} }];
+let activeSheet = 0;
+let selectedCell = { r: 0, c: 0 };
+let selStart = null, selEnd = null;
+let isEditing = false;
+let clipboard = null;
+let undoStack = [], redoStack = [];
+let saveTimer = null;
+let currentFileId = null;
+let currentMode = 'pro';
+let isGuest = false;
+let _currentUser = null;
+
+function data() { return sheets[activeSheet].data; }
+function fmts() { return sheets[activeSheet].formats; }
+function cellKey(r, c) { return `${r}_${c}`; }
+function colLabel(c) { return String.fromCharCode(65 + c); }
+function cellLabel(r, c) { return `${colLabel(c)}${r + 1}`; }
+
+// ══════════════════════════════════════════════════════
+//  AUTH
+// ══════════════════════════════════════════════════════
+async function signInGoogle() {
+  try {
+    await window._fb.signInWithPopup(window._fb.auth, window._fb.provider);
+    hideAuth();
+    toast('Connecté ! 🎉', 'ok');
+    loadFileList();
+  } catch(e) { toast('Erreur connexion', 'err'); }
+}
+function continueGuest() {
+  isGuest = true;
+  hideAuth();
+  toast('Mode invité — sauvegarde locale uniquement');
+}
+function hideAuth() {
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('app').classList.add('visible');
+  buildGrid();
+  renderTabs();
+}
+function showUserMenu() {
+  if (window._fb?.auth?.currentUser) {
+    if (confirm(`Déconnexion de ${window._fb.auth.currentUser.displayName} ?`)) {
+      window._fb.signOut(window._fb.auth);
+      toast('Déconnecté');
+    }
+  }
+}
+window.signInGoogle = signInGoogle;
+window.continueGuest = continueGuest;
+window.showUserMenu = showUserMenu;
+
+// ══════════════════════════════════════════════════════
+//  GRID BUILD
+// ══════════════════════════════════════════════════════
+function buildGrid() {
+  const t = document.getElementById('grid');
+  t.innerHTML = '';
+  // Header row
+  const hrow = document.createElement('tr');
+  const corner = document.createElement('th');
+  corner.className = 'corner';
+  corner.onclick = selectAll;
+  hrow.appendChild(corner);
+  for (let c = 0; c < COLS; c++) {
+    const th = document.createElement('th');
+    th.className = 'ch';
+    th.textContent = colLabel(c);
+    th.dataset.c = c;
+    th.onclick = () => selectColumn(c);
+    th.oncontextmenu = (e) => { e.preventDefault(); selectColumn(c); showCtx(e); };
+    hrow.appendChild(th);
+  }
+  t.appendChild(hrow);
+
+  for (let r = 0; r < ROWS; r++) {
+    const row = document.createElement('tr');
+    const rh = document.createElement('td');
+    rh.className = 'rh';
+    rh.textContent = r + 1;
+    rh.dataset.r = r;
+    rh.onclick = () => selectRow(r);
+    row.appendChild(rh);
+    for (let c = 0; c < COLS; c++) {
+      const td = document.createElement('td');
+      td.className = 'cell';
+      td.dataset.r = r;
+      td.dataset.c = c;
+      td.tabIndex = -1;
+      td.onclick = (e) => onCellClick(e, r, c);
+      td.ondblclick = () => startEdit(r, c);
+      td.oncontextmenu = (e) => { e.preventDefault(); selectCell(r, c); showCtx(e); };
+      row.appendChild(td);
+    }
+    t.appendChild(row);
+  }
+  refreshAll();
+}
+
+function getCell(r, c) {
+  return document.querySelector(`#grid td.cell[data-r="${r}"][data-c="${c}"]`);
+}
+
+function refreshAll() {
+  for (let r = 0; r < ROWS; r++)
+    for (let c = 0; c < COLS; c++)
+      refreshCell(r, c);
+  highlightSelection();
+}
+
+function refreshCell(r, c) {
+  const td = getCell(r, c);
+  if (!td) return;
+  const k = cellKey(r, c);
+  const raw = data()[k] || '';
+  const fmt = fmts()[k] || {};
+
+  td.textContent = computeDisplay(raw, r, c);
+  td.className = 'cell';
+  if (fmt.bold) td.classList.add('bold');
+  if (fmt.italic) td.classList.add('italic');
+  if (fmt.underline) td.classList.add('underline');
+  if (fmt.strike) td.classList.add('strike');
+  if (fmt.align) td.classList.add('a' + fmt.align);
+  if (fmt.fg) td.style.color = fmt.fg;
+  else td.style.color = '';
+  if (fmt.bg) td.style.background = fmt.bg;
+  else td.style.background = '';
+  if (fmt.font) td.style.fontFamily = fmt.font;
+  else td.style.fontFamily = '';
+  if (fmt.size) td.style.fontSize = fmt.size + 'px';
+  else td.style.fontSize = '';
+
+  // Error class
+  if (typeof td.textContent === 'string' && td.textContent.startsWith('#ERR')) {
+    td.classList.add('error');
+  }
+}
+
+// ══════════════════════════════════════════════════════
+//  FORMULA ENGINE
+// ══════════════════════════════════════════════════════
+function computeDisplay(raw, r, c) {
+  if (typeof raw !== 'string' || !raw.startsWith('=')) return raw;
+  try {
+    return evalFormula(raw.slice(1).toUpperCase().trim(), r, c);
+  } catch(e) { return '#ERR'; }
+}
+
+function getCellValue(r, c) {
+  const k = cellKey(r, c);
+  const raw = data()[k];
+  if (!raw) return 0;
+  if (typeof raw === 'string' && raw.startsWith('=')) {
+    const v = evalFormula(raw.slice(1).toUpperCase(), r, c);
+    return isNaN(Number(v)) ? v : Number(v);
+  }
+  return isNaN(Number(raw)) ? raw : Number(raw);
+}
+
+function parseRange(range) {
+  const m = range.match(/^([A-Z]+)(\d+):([A-Z]+)(\d+)$/);
+  if (!m) return null;
+  const c1 = m[1].charCodeAt(0)-65, r1 = parseInt(m[2])-1;
+  const c2 = m[3].charCodeAt(0)-65, r2 = parseInt(m[4])-1;
+  const vals = [];
+  for (let r = r1; r <= r2; r++)
+    for (let c = c1; c <= c2; c++) vals.push(getCellValue(r, c));
+  return vals;
+}
+
+function parseCellRef(ref) {
+  const m = ref.match(/^([A-Z]+)(\d+)$/);
+  if (!m) return null;
+  return { r: parseInt(m[2])-1, c: m[1].charCodeAt(0)-65 };
+}
+
+function evalFormula(expr, selfR, selfC) {
+  // Replace cell refs in arithmetic
+  expr = expr.replace(/([A-Z]+\d+)/g, (match) => {
+    const p = parseCellRef(match);
+    if (!p) return match;
+    const v = getCellValue(p.r, p.c);
+    return typeof v === 'number' ? v : `"${v}"`;
+  });
+
+  // SUM
+  expr = expr.replace(/SOMME\(([^)]+)\)|SUM\(([^)]+)\)/g, (_, a1, a2) => {
+    const arg = a1 || a2;
+    if (arg.includes(':')) { const v = parseRange(arg); return v ? v.reduce((s,x)=>s+(+x||0),0) : 0; }
+    return arg.split(',').reduce((s,x)=>s+(+x||0),0);
+  });
+  // AVERAGE
+  expr = expr.replace(/MOYENNE\(([^)]+)\)|AVERAGE\(([^)]+)\)/g, (_, a1, a2) => {
+    const arg = a1 || a2;
+    const v = parseRange(arg); if (!v) return 0;
+    return v.reduce((s,x)=>s+(+x||0),0) / v.length;
+  });
+  // MAX
+  expr = expr.replace(/MAX\(([^)]+)\)/g, (_, arg) => {
+    const v = parseRange(arg); return v ? Math.max(...v.map(Number)) : 0;
+  });
+  // MIN
+  expr = expr.replace(/MIN\(([^)]+)\)/g, (_, arg) => {
+    const v = parseRange(arg); return v ? Math.min(...v.map(Number)) : 0;
+  });
+  // COUNT / NB
+  expr = expr.replace(/NB\(([^)]+)\)|COUNT\(([^)]+)\)/g, (_, a1, a2) => {
+    const arg = a1||a2; const v = parseRange(arg); return v ? v.filter(x=>x!==0&&x!=='').length : 0;
+  });
+  // ROUND / ARRONDI
+  expr = expr.replace(/ARRONDI\(([^,]+),([^)]+)\)|ROUND\(([^,]+),([^)]+)\)/g,
+    (_,a,b,c,d) => Math.round(+(a||c)*Math.pow(10,+(b||d)))/Math.pow(10,+(b||d)));
+  // ABS
+  expr = expr.replace(/ABS\(([^)]+)\)/g, (_, a) => Math.abs(+a));
+  // IF / SI
+  expr = expr.replace(/SI\(([^,]+),([^,]+),([^)]+)\)|IF\(([^,]+),([^,]+),([^)]+)\)/g,
+    (_,c1,t1,f1,c2,t2,f2) => {
+      try { return eval(c1||c2) ? (t1||t2) : (f1||f2); } catch { return f1||f2; }
+    });
+  // CONCAT
+  expr = expr.replace(/CONCAT\(([^)]+)\)/g, (_, args) => args.split(',').join(''));
+
+  // Evaluate remaining arithmetic
+  try {
+    const result = Function('"use strict"; return (' + expr + ')')();
+    if (typeof result === 'number' && !isNaN(result)) {
+      return Number.isInteger(result) ? result : +result.toFixed(8);
+    }
+    return result ?? '';
+  } catch { return '#ERR'; }
+}
+
+// ══════════════════════════════════════════════════════
+//  CELL SELECTION & NAVIGATION
+// ══════════════════════════════════════════════════════
+function selectCell(r, c) {
+  selectedCell = { r, c };
+  selStart = { r, c }; selEnd = { r, c };
+  document.getElementById('cell-ref').textContent = cellLabel(r, c);
+  const raw = data()[cellKey(r, c)] || '';
+  document.getElementById('formula-input').value = raw;
+  updateToolbarState(r, c);
+  highlightSelection();
+}
+
+function onCellClick(e, r, c) {
+  if (e.shiftKey && selStart) {
+    selEnd = { r, c };
+    selectedCell = { r, c };
+    highlightSelection();
+    return;
+  }
+  if (isEditing) commitEdit();
+  selectCell(r, c);
+  getCell(r, c)?.focus();
+}
+
+function highlightSelection() {
+  document.querySelectorAll('.cell').forEach(td => {
+    td.classList.remove('selected', 'in-range');
+  });
+  const r1 = Math.min(selStart?.r??selectedCell.r, selEnd?.r??selectedCell.r);
+  const r2 = Math.max(selStart?.r??selectedCell.r, selEnd?.r??selectedCell.r);
+  const c1 = Math.min(selStart?.c??selectedCell.c, selEnd?.c??selectedCell.c);
+  const c2 = Math.max(selStart?.c??selectedCell.c, selEnd?.c??selectedCell.c);
+  for (let r = r1; r <= r2; r++) {
+    for (let c = c1; c <= c2; c++) {
+      const td = getCell(r, c);
+      if (!td) continue;
+      if (r === selectedCell.r && c === selectedCell.c) td.classList.add('selected');
+      else td.classList.add('in-range');
+    }
+  }
+  // Headers
+  document.querySelectorAll('.ch').forEach(th => th.classList.remove('sel'));
+  document.querySelectorAll('.rh').forEach(td => td.classList.remove('sel'));
+  for (let c = c1; c <= c2; c++) {
+    document.querySelector(`.ch[data-c="${c}"]`)?.classList.add('sel');
+  }
+  for (let r = r1; r <= r2; r++) {
+    document.querySelector(`.rh[data-r="${r}"]`)?.classList.add('sel');
+  }
+}
+
+function selectRow(r) {
+  selStart = { r, c: 0 }; selEnd = { r, c: COLS-1 };
+  selectedCell = { r, c: 0 }; highlightSelection();
+}
+function selectColumn(c) {
+  selStart = { r: 0, c }; selEnd = { r: ROWS-1, c };
+  selectedCell = { r: 0, c }; highlightSelection();
+}
+function selectAll() {
+  selStart = { r: 0, c: 0 }; selEnd = { r: ROWS-1, c: COLS-1 };
+  highlightSelection();
+}
+window.selectAll = selectAll;
+
+function navCell(dir) {
+  if (isEditing) commitEdit();
+  let { r, c } = selectedCell;
+  if (dir === 'ArrowUp') r = Math.max(0, r-1);
+  if (dir === 'ArrowDown') r = Math.min(ROWS-1, r+1);
+  if (dir === 'ArrowLeft') c = Math.max(0, c-1);
+  if (dir === 'ArrowRight') c = Math.min(COLS-1, c+1);
+  selectCell(r, c);
+  getCell(r, c)?.focus();
+  scrollIntoView(r, c);
+}
+window.navCell = navCell;
+
+function scrollIntoView(r, c) {
+  getCell(r, c)?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+}
+
+function confirmCell() {
+  if (isEditing) commitEdit();
+  navCell('ArrowDown');
+}
+window.confirmCell = confirmCell;
+
+// ══════════════════════════════════════════════════════
+//  EDITING
+// ══════════════════════════════════════════════════════
+let editInput = null;
+
+function startEdit(r, c) {
+  if (isEditing) commitEdit();
+  isEditing = true;
+  selectedCell = { r, c };
+  const td = getCell(r, c);
+  if (!td) return;
+  td.classList.add('editing');
+  const raw = data()[cellKey(r, c)] || '';
+  td.textContent = '';
+  editInput = document.createElement('input');
+  editInput.value = raw;
+  editInput.style.cssText = 'width:100%;height:100%;background:transparent;border:none;outline:none;color:inherit;font:inherit;padding:0 4px;';
+  editInput.oninput = () => {
+    document.getElementById('formula-input').value = editInput.value;
+  };
+  editInput.onblur = () => { if (isEditing) commitEdit(); };
+  editInput.onkeydown = (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); commitEdit(); navCell('ArrowDown'); }
+    if (e.key === 'Tab') { e.preventDefault(); commitEdit(); navCell('ArrowRight'); }
+    if (e.key === 'Escape') { cancelEdit(); }
+    e.stopPropagation();
+  };
+  td.appendChild(editInput);
+  editInput.focus();
+  editInput.select();
+}
+
+function commitEdit() {
+  if (!isEditing || !editInput) return;
+  isEditing = false;
+  const { r, c } = selectedCell;
+  const val = editInput.value;
+  const k = cellKey(r, c);
+  pushUndo();
+  if (val === '') delete data()[k];
+  else data()[k] = val;
+  const td = getCell(r, c);
+  if (td) { td.classList.remove('editing'); editInput = null; }
+  refreshCell(r, c);
+  scheduleSave();
+}
+
+function cancelEdit() {
+  if (!isEditing || !editInput) return;
+  isEditing = false;
+  const { r, c } = selectedCell;
+  const td = getCell(r, c);
+  if (td) { td.classList.remove('editing'); editInput = null; }
+  refreshCell(r, c);
+}
+
+function onFormulaInput(val) {
+  if (!isEditing) {
+    startEdit(selectedCell.r, selectedCell.c);
+  }
+  if (editInput) editInput.value = val;
+}
+window.onFormulaInput = onFormulaInput;
+
+function onFormulaKey(e) {
+  if (e.key === 'Enter') { e.preventDefault(); commitEdit(); navCell('ArrowDown'); }
+  if (e.key === 'Escape') { cancelEdit(); }
+}
+window.onFormulaKey = onFormulaKey;
+
+// ══════════════════════════════════════════════════════
+//  KEYBOARD
+// ══════════════════════════════════════════════════════
+document.addEventListener('keydown', (e) => {
+  if (!document.getElementById('app').classList.contains('visible')) return;
+  const tag = document.activeElement.tagName;
+  if (tag === 'INPUT' && document.activeElement.id !== 'formula-input') return;
+
+  if (e.ctrlKey || e.metaKey) {
+    if (e.key === 'z') { e.preventDefault(); undoAction(); }
+    if (e.key === 'y' || (e.key === 'z' && e.shiftKey)) { e.preventDefault(); redoAction(); }
+    if (e.key === 'c') { e.preventDefault(); ctxCopy(); }
+    if (e.key === 'x') { e.preventDefault(); ctxCut(); }
+    if (e.key === 'v') { e.preventDefault(); ctxPaste(); }
+    if (e.key === 'b') { e.preventDefault(); toggleFmt('bold'); }
+    if (e.key === 'i') { e.preventDefault(); toggleFmt('italic'); }
+    if (e.key === 'u') { e.preventDefault(); toggleFmt('underline'); }
+    if (e.key === 's') { e.preventDefault(); saveNow(); }
+    return;
+  }
+
+  if (isEditing) return;
+
+  if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)) {
+    e.preventDefault(); navCell(e.key); return;
+  }
+  if (e.key === 'Enter') { e.preventDefault(); startEdit(selectedCell.r, selectedCell.c); return; }
+  if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); clearSelection(); return; }
+  if (e.key === 'Tab') { e.preventDefault(); navCell('ArrowRight'); return; }
+  if (e.key === 'F2') { e.preventDefault(); startEdit(selectedCell.r, selectedCell.c); return; }
+
+  // Start typing to begin edit
+  if (e.key.length === 1 && !e.ctrlKey && !e.metaKey) {
+    startEdit(selectedCell.r, selectedCell.c);
+    setTimeout(() => { if (editInput) { editInput.value = e.key; editInput.dispatchEvent(new Event('input')); }}, 0);
+  }
+});
+
+// ══════════════════════════════════════════════════════
+//  FORMATTING
+// ══════════════════════════════════════════════════════
+function updateToolbarState(r, c) {
+  const fmt = fmts()[cellKey(r, c)] || {};
+  document.getElementById('btn-bold').classList.toggle('on', !!fmt.bold);
+  document.getElementById('btn-italic').classList.toggle('on', !!fmt.italic);
+  document.getElementById('btn-underline').classList.toggle('on', !!fmt.underline);
+  if (fmt.fg) document.getElementById('bar-fg').style.background = fmt.fg;
+}
+
+function applyToSelection(fn) {
+  pushUndo();
+  const r1 = Math.min(selStart?.r??selectedCell.r, selEnd?.r??selectedCell.r);
+  const r2 = Math.max(selStart?.r??selectedCell.r, selEnd?.r??selectedCell.r);
+  const c1 = Math.min(selStart?.c??selectedCell.c, selEnd?.c??selectedCell.c);
+  const c2 = Math.max(selStart?.c??selectedCell.c, selEnd?.c??selectedCell.c);
+  for (let r = r1; r <= r2; r++)
+    for (let c = c1; c <= c2; c++) {
+      const k = cellKey(r, c);
+      if (!fmts()[k]) fmts()[k] = {};
+      fn(fmts()[k], r, c);
+      refreshCell(r, c);
+    }
+  scheduleSave();
+}
+
+function toggleFmt(prop) {
+  applyToSelection(fmt => {
+    fmt[prop] = !fmt[prop];
+  });
+  updateToolbarState(selectedCell.r, selectedCell.c);
+}
+function applyAlign(a) { applyToSelection(fmt => fmt.align = a); }
+function applyColor(type, val) {
+  if (type === 'fg') { document.getElementById('bar-fg').style.background = val; applyToSelection(fmt => fmt.fg = val); }
+  else { document.getElementById('bar-bg').style.background = val; applyToSelection(fmt => fmt.bg = val); }
+}
+function applyFont(v) { applyToSelection(fmt => fmt.font = v); }
+function applyFontSize(v) { applyToSelection(fmt => fmt.size = v); }
+window.toggleFmt = toggleFmt;
+window.applyAlign = applyAlign;
+window.applyColor = applyColor;
+window.applyFont = applyFont;
+window.applyFontSize = applyFontSize;
+
+// ══════════════════════════════════════════════════════
+//  ROWS / COLS
+// ══════════════════════════════════════════════════════
+function insertRow() {
+  pushUndo();
+  const r = selectedCell.r;
+  const nd = {}, nf = {};
+  for (const k in data()) {
+    const [kr, kc] = k.split('_').map(Number);
+    if (kr >= r) nd[`${kr+1}_${kc}`] = data()[k];
+    else nd[k] = data()[k];
+  }
+  for (const k in fmts()) {
+    const [kr, kc] = k.split('_').map(Number);
+    if (kr >= r) nf[`${kr+1}_${kc}`] = fmts()[k];
+    else nf[k] = fmts()[k];
+  }
+  sheets[activeSheet].data = nd;
+  sheets[activeSheet].formats = nf;
+  refreshAll(); scheduleSave(); toast('Ligne insérée');
+}
+function deleteRow() {
+  pushUndo();
+  const r = selectedCell.r;
+  const nd = {}, nf = {};
+  for (const k in data()) {
+    const [kr, kc] = k.split('_').map(Number);
+    if (kr === r) continue;
+    if (kr > r) nd[`${kr-1}_${kc}`] = data()[k];
+    else nd[k] = data()[k];
+  }
+  sheets[activeSheet].data = nd;
+  sheets[activeSheet].formats = nf;
+  refreshAll(); scheduleSave(); toast('Ligne supprimée');
+}
+function insertCol() {
+  pushUndo();
+  const c = selectedCell.c;
+  const nd = {}, nf = {};
+  for (const k in data()) {
+    const [kr, kc] = k.split('_').map(Number);
+    if (kc >= c) nd[`${kr}_${kc+1}`] = data()[k];
+    else nd[k] = data()[k];
+  }
+  sheets[activeSheet].data = nd;
+  sheets[activeSheet].formats = nf;
+  refreshAll(); scheduleSave(); toast('Colonne insérée');
+}
+function deleteCol() {
+  pushUndo();
+  const c = selectedCell.c;
+  const nd = {};
+  for (const k in data()) {
+    const [kr, kc] = k.split('_').map(Number);
+    if (kc === c) continue;
+    if (kc > c) nd[`${kr}_${kc-1}`] = data()[k];
+    else nd[k] = data()[k];
+  }
+  sheets[activeSheet].data = nd;
+  sheets[activeSheet].formats = {};
+  refreshAll(); scheduleSave(); toast('Colonne supprimée');
+}
+function mergeCells() { toast('Fusion : sélectionne une plage puis applique', 'ok'); }
+window.insertRow = insertRow; window.deleteRow = deleteRow;
+window.insertCol = insertCol; window.deleteCol = deleteCol;
+window.mergeCells = mergeCells;
+
+// ══════════════════════════════════════════════════════
+//  CLIPBOARD
+// ══════════════════════════════════════════════════════
+function ctxCopy() {
+  const k = cellKey(selectedCell.r, selectedCell.c);
+  clipboard = { val: data()[k], fmt: fmts()[k], type: 'copy' };
+  toast('Copié ✓', 'ok');
+}
+function ctxCut() {
+  const k = cellKey(selectedCell.r, selectedCell.c);
+  clipboard = { val: data()[k], fmt: fmts()[k], type: 'cut', r: selectedCell.r, c: selectedCell.c };
+  toast('Coupé ✓', 'ok');
+}
+function ctxPaste() {
+  if (!clipboard) return;
+  pushUndo();
+  const k = cellKey(selectedCell.r, selectedCell.c);
+  if (clipboard.val) data()[k] = clipboard.val;
+  if (clipboard.fmt) fmts()[k] = { ...clipboard.fmt };
+  if (clipboard.type === 'cut') {
+    delete data()[cellKey(clipboard.r, clipboard.c)];
+    delete fmts()[cellKey(clipboard.r, clipboard.c)];
+    refreshCell(clipboard.r, clipboard.c);
+    clipboard = null;
+  }
+  refreshCell(selectedCell.r, selectedCell.c);
+  scheduleSave();
+}
+function clearSelection() {
+  pushUndo();
+  const r1 = Math.min(selStart?.r??selectedCell.r, selEnd?.r??selectedCell.r);
+  const r2 = Math.max(selStart?.r??selectedCell.r, selEnd?.r??selectedCell.r);
+  const c1 = Math.min(selStart?.c??selectedCell.c, selEnd?.c??selectedCell.c);
+  const c2 = Math.max(selStart?.c??selectedCell.c, selEnd?.c??selectedCell.c);
+  for (let r = r1; r <= r2; r++)
+    for (let c = c1; c <= c2; c++) {
+      delete data()[cellKey(r, c)];
+      delete fmts()[cellKey(r, c)];
+      refreshCell(r, c);
+    }
+  scheduleSave();
+}
+window.ctxCopy = ctxCopy; window.ctxCut = ctxCut;
+window.ctxPaste = ctxPaste; window.clearSelection = clearSelection;
+
+// ══════════════════════════════════════════════════════
+//  UNDO / REDO
+// ══════════════════════════════════════════════════════
+function pushUndo() {
+  undoStack.push(JSON.parse(JSON.stringify(sheets)));
+  if (undoStack.length > 50) undoStack.shift();
+  redoStack = [];
+}
+function undoAction() {
+  if (!undoStack.length) return;
+  redoStack.push(JSON.parse(JSON.stringify(sheets)));
+  sheets = undoStack.pop();
+  refreshAll(); renderTabs(); toast('Annulé ↩');
+}
+function redoAction() {
+  if (!redoStack.length) return;
+  undoStack.push(JSON.parse(JSON.stringify(sheets)));
+  sheets = redoStack.pop();
+  refreshAll(); renderTabs(); toast('Rétabli ↪');
+}
+window.undoAction = undoAction; window.redoAction = redoAction;
+
+// ══════════════════════════════════════════════════════
+//  AUTO SUM + SORT + FREEZE
+// ══════════════════════════════════════════════════════
+function autoSum() {
+  const r = selectedCell.r; const c = selectedCell.c;
+  // Find non-empty cells above
+  let top = r - 1;
+  while (top >= 0 && data()[cellKey(top, c)]) top--;
+  top++;
+  if (top < r) {
+    const formula = `=SUM(${cellLabel(top, c)}:${cellLabel(r-1, c)})`;
+    pushUndo();
+    data()[cellKey(r, c)] = formula;
+    refreshCell(r, c);
+    document.getElementById('formula-input').value = formula;
+    scheduleSave();
+    toast('Σ Somme insérée', 'ok');
+  } else toast('Pas de données au-dessus', 'err');
+}
+function sortAsc() {
+  pushUndo();
+  const c = selectedCell.c;
+  const rows = [];
+  for (let r = 1; r < ROWS; r++) rows.push(r);
+  rows.sort((a, b) => {
+    const va = data()[cellKey(a, c)] || '';
+    const vb = data()[cellKey(b, c)] || '';
+    return String(va).localeCompare(String(vb), undefined, { numeric: true });
+  });
+  applySort(rows, c);
+}
+function sortDesc() {
+  pushUndo();
+  const c = selectedCell.c;
+  const rows = [];
+  for (let r = 1; r < ROWS; r++) rows.push(r);
+  rows.sort((a, b) => {
+    const va = data()[cellKey(a, c)] || '';
+    const vb = data()[cellKey(b, c)] || '';
+    return String(vb).localeCompare(String(va), undefined, { numeric: true });
+  });
+  applySort(rows, c);
+}
+function applySort(sortedRows, byCol) {
+  const oldData = { ...data() };
+  for (let i = 0; i < sortedRows.length; i++) {
+    for (let c = 0; c < COLS; c++) {
+      const newKey = cellKey(i + 1, c);
+      const oldKey = cellKey(sortedRows[i], c);
+      if (oldData[oldKey]) data()[newKey] = oldData[oldKey];
+      else delete data()[newKey];
+    }
+  }
+  refreshAll(); scheduleSave();
+}
+function freezeRow() { toast('Gel de ligne : fonctionnalité avancée à venir 🧊'); }
+window.autoSum = autoSum; window.sortAsc = sortAsc;
+window.sortDesc = sortDesc; window.freezeRow = freezeRow;
+
+// ══════════════════════════════════════════════════════
+//  QUICK FORMULAS (simple mode)
+// ══════════════════════════════════════════════════════
+function insertFormula(type) {
+  const { r, c } = selectedCell;
+  let formula = '';
+  const above = r > 0 ? `${cellLabel(0, c)}:${cellLabel(r-1, c)}` : 'A1:A1';
+  switch(type) {
+    case 'SUM': formula = `=SUM(${above})`; break;
+    case 'AVERAGE': formula = `=AVERAGE(${above})`; break;
+    case 'COUNT': formula = `=COUNT(${above})`; break;
+    case 'MAX': formula = `=MAX(${above})`; break;
+    case 'MIN': formula = `=MIN(${above})`; break;
+    case 'IF': formula = `=IF(A1>0,"Positif","Négatif")`; break;
+    case 'PERCENT': formula = `=${cellLabel(r-1,c)}/100*20`; break;
+    case 'MARGIN': formula = `=(${cellLabel(r-1,c)}-${cellLabel(r-2,c)})/${cellLabel(r-2,c)}*100`; break;
+    case 'TVA': formula = `=${cellLabel(r-1,c)}*0.2`; break;
+    case 'HT': formula = `=${cellLabel(r-1,c)}*1.2`; break;
+  }
+  pushUndo();
+  data()[cellKey(r, c)] = formula;
+  refreshCell(r, c);
+  document.getElementById('formula-input').value = formula;
+  scheduleSave();
+}
+window.insertFormula = insertFormula;
+
+// ══════════════════════════════════════════════════════
+//  SHEETS TABS
+// ══════════════════════════════════════════════════════
+function renderTabs() {
+  const list = document.getElementById('tabs-list');
+  list.innerHTML = '';
+  sheets.forEach((s, i) => {
+    const tab = document.createElement('div');
+    tab.className = 'sheet-tab' + (i === activeSheet ? ' active' : '');
+    const nameEl = document.createElement('span');
+    nameEl.textContent = s.name;
+    nameEl.ondblclick = () => renameSheet(i);
+    tab.onclick = () => switchSheet(i);
+    tab.appendChild(nameEl);
+    if (sheets.length > 1) {
+      const x = document.createElement('span');
+      x.className = 'tab-close';
+      x.textContent = '×';
+      x.onclick = (e) => { e.stopPropagation(); removeSheet(i); };
+      tab.appendChild(x);
+    }
+    list.appendChild(tab);
+  });
+}
+function switchSheet(i) {
+  if (isEditing) commitEdit();
+  activeSheet = i;
+  renderTabs();
+  refreshAll();
+  selectCell(0, 0);
+}
+function addSheet() {
+  sheets.push({ name: `Feuille ${sheets.length + 1}`, data: {}, formats: {} });
+  switchSheet(sheets.length - 1);
+  scheduleSave();
+}
+function removeSheet(i) {
+  if (sheets.length === 1) return toast('Il faut au moins une feuille', 'err');
+  sheets.splice(i, 1);
+  if (activeSheet >= sheets.length) activeSheet = sheets.length - 1;
+  renderTabs(); refreshAll(); scheduleSave();
+}
+function renameSheet(i) {
+  const name = prompt('Renommer la feuille :', sheets[i].name);
+  if (name) { sheets[i].name = name; renderTabs(); scheduleSave(); }
+}
+window.addSheet = addSheet;
+
+// ══════════════════════════════════════════════════════
+//  CONTEXT MENU
+// ══════════════════════════════════════════════════════
+function showCtx(e) {
+  const m = document.getElementById('ctx-menu');
+  m.style.display = 'block';
+  m.style.left = Math.min(e.clientX, window.innerWidth - 180) + 'px';
+  m.style.top = Math.min(e.clientY, window.innerHeight - 200) + 'px';
+}
+document.addEventListener('click', () => {
+  document.getElementById('ctx-menu').style.display = 'none';
+});
+window.showCtx = showCtx;
+
+// ══════════════════════════════════════════════════════
+//  MODE TOGGLE
+// ══════════════════════════════════════════════════════
+function setMode(mode) {
+  currentMode = mode;
+  document.getElementById('btn-pro').classList.toggle('active', mode === 'pro');
+  document.getElementById('btn-simple').classList.toggle('active', mode === 'simple');
+  document.body.classList.toggle('simple', mode === 'simple');
+}
+window.setMode = setMode;
+
+// ══════════════════════════════════════════════════════
+//  SAVE / LOAD (Firebase + LocalStorage)
+// ══════════════════════════════════════════════════════
+function getState() {
+  return {
+    name: document.getElementById('file-name').value,
+    sheets,
+    updatedAt: Date.now()
+  };
+}
+
+function setSaveIndicator(state) {
+  const el = document.getElementById('save-indicator');
+  el.className = '';
+  if (state === 'saving') { el.className = 'saving'; el.textContent = '◌ Sauvegarde...'; }
+  else if (state === 'saved') { el.className = 'saved'; el.textContent = '✓ Sauvegardé'; }
+  else { el.textContent = '● Local'; }
+}
+
+function scheduleSave() {
+  setSaveIndicator('saving');
+  if (saveTimer) clearTimeout(saveTimer);
+  saveTimer = setTimeout(saveNow, 1500);
+}
+
+async function saveNow() {
+  const state = getState();
+  // Guest / local
+  if (isGuest || !window._currentUser) {
+    localStorage.setItem('sheetflow_current', JSON.stringify(state));
+    setSaveIndicator('saved');
+    return;
+  }
+  // Firebase save
+  try {
+    const fb = window._fb;
+    const uid = fb.auth.currentUser.uid;
+    if (!currentFileId) currentFileId = 'file_' + Date.now();
+    const ref = fb.doc(fb.db, 'sheetflow', uid, 'files', currentFileId);
+    await fb.setDoc(ref, {
+      name: state.name,
+      sheets: JSON.stringify(state.sheets),
+      updatedAt: fb.serverTimestamp()
+    });
+    // Save version
+    const verRef = fb.collection(fb.db, 'sheetflow', uid, 'files', currentFileId, 'versions');
+    await fb.addDoc(verRef, {
+      sheets: JSON.stringify(state.sheets),
+      savedAt: fb.serverTimestamp(),
+      cells: Object.keys(sheets[0].data).length
+    });
+    setSaveIndicator('saved');
+  } catch(e) {
+    setSaveIndicator('local');
+    localStorage.setItem('sheetflow_current', JSON.stringify(state));
+  }
+}
+window.saveNow = saveNow;
+
+async function loadFile(fileId, uid) {
+  try {
+    const fb = window._fb;
+    const ref = fb.doc(fb.db, 'sheetflow', uid, 'files', fileId);
+    const snap = await fb.getDoc(ref);
+    if (snap.exists()) {
+      const d = snap.data();
+      sheets = JSON.parse(d.sheets);
+      currentFileId = fileId;
+      document.getElementById('file-name').value = d.name || 'Fichier';
+      activeSheet = 0;
+      buildGrid(); renderTabs();
+      selectCell(0, 0);
+      closePanel('panel-history');
+      toast('Fichier chargé ✓', 'ok');
+    }
+  } catch(e) { toast('Erreur chargement', 'err'); }
+}
+
+// ══════════════════════════════════════════════════════
+//  NEW FILE
+// ══════════════════════════════════════════════════════
+function newFile() {
+  if (confirm('Créer un nouveau fichier ? (le fichier actuel est sauvegardé)')) {
+    saveNow();
+    sheets = [{ name: 'Feuille 1', data: {}, formats: {} }];
+    activeSheet = 0;
+    currentFileId = null;
+    document.getElementById('file-name').value = 'Nouveau fichier';
+    buildGrid(); renderTabs();
+    selectCell(0, 0);
+    closePanel('panel-history');
+    toast('Nouveau fichier créé ✓', 'ok');
+  }
+}
+window.newFile = newFile;
+
+// ══════════════════════════════════════════════════════
+//  HISTORY PANEL
+// ══════════════════════════════════════════════════════
+async function showHistory() {
+  openPanel('panel-history');
+  const list = document.getElementById('history-list');
+  if (isGuest || !window._currentUser) {
+    list.innerHTML = '<div style="color:var(--t2);text-align:center;padding:20px;font-size:12px">Connecte-toi pour accéder à l\'historique cloud ☁️</div>';
+    return;
+  }
+  list.innerHTML = '<div style="color:var(--t2);text-align:center;padding:20px">Chargement...</div>';
+  try {
+    const fb = window._fb;
+    const uid = fb.auth.currentUser.uid;
+    const colRef = fb.collection(fb.db, 'sheetflow', uid, 'files');
+    const q = fb.query(colRef, fb.orderBy('updatedAt', 'desc'), fb.limit(20));
+    const snap = await fb.getDocs(q);
+    if (snap.empty) {
+      list.innerHTML = '<div style="color:var(--t2);text-align:center;padding:20px">Aucun fichier sauvegardé</div>';
+      return;
+    }
+    list.innerHTML = '';
+    snap.forEach(doc => {
+      const d = doc.data();
+      const date = d.updatedAt?.toDate?.() ? d.updatedAt.toDate().toLocaleString('fr-FR') : 'Récent';
+      const isActive = doc.id === currentFileId;
+      const item = document.createElement('div');
+      item.className = 'hist-item';
+      item.innerHTML = `
+        <div class="hist-icon">📊</div>
+        <div class="hist-info">
+          <div class="hist-name">${d.name || 'Sans titre'}</div>
+          <div class="hist-meta">Modifié le ${date}</div>
+        </div>
+        <span class="hist-badge ${isActive ? 'active' : ''}">${isActive ? 'Ouvert' : 'Sauvegardé'}</span>
+        <div class="hist-actions">
+          <button class="hist-btn" onclick="loadFile('${doc.id}','${uid}')">Ouvrir</button>
+          <button class="hist-btn danger" onclick="deleteFile('${doc.id}','${uid}',this)">Suppr.</button>
+        </div>`;
+      list.appendChild(item);
+    });
+  } catch(e) { list.innerHTML = '<div style="color:var(--red);text-align:center;padding:20px">Erreur de chargement</div>'; }
+}
+async function deleteFile(fileId, uid, btn) {
+  if (!confirm('Supprimer ce fichier ?')) return;
+  try {
+    const fb = window._fb;
+    await fb.deleteDoc(fb.doc(fb.db, 'sheetflow', uid, 'files', fileId));
+    btn.closest('.hist-item').remove();
+    toast('Fichier supprimé', 'ok');
+  } catch(e) { toast('Erreur', 'err'); }
+}
+window.showHistory = showHistory;
+window.loadFile = loadFile;
+window.deleteFile = deleteFile;
+
+// ══════════════════════════════════════════════════════
+//  VERSIONS
+// ══════════════════════════════════════════════════════
+async function showVersions() {
+  openPanel('panel-versions');
+  const list = document.getElementById('versions-list');
+  if (!currentFileId || isGuest || !window._currentUser) {
+    list.innerHTML = '<div style="color:var(--t2);text-align:center;padding:20px;font-size:12px">Sauvegarde d\'abord ton fichier pour voir les versions</div>';
+    return;
+  }
+  list.innerHTML = '<div style="color:var(--t2);text-align:center;padding:20px">Chargement...</div>';
+  try {
+    const fb = window._fb;
+    const uid = fb.auth.currentUser.uid;
+    const verRef = fb.collection(fb.db, 'sheetflow', uid, 'files', currentFileId, 'versions');
+    const q = fb.query(verRef, fb.orderBy('savedAt', 'desc'), fb.limit(15));
+    const snap = await fb.getDocs(q);
+    list.innerHTML = '';
+    if (snap.empty) { list.innerHTML = '<div style="color:var(--t2);text-align:center;padding:20px">Aucune version disponible</div>'; return; }
+    let first = true;
+    snap.forEach(doc => {
+      const d = doc.data();
+      const date = d.savedAt?.toDate?.() ? d.savedAt.toDate().toLocaleString('fr-FR') : 'Récent';
+      const item = document.createElement('div');
+      item.className = 'ver-item';
+      item.innerHTML = `
+        <div class="ver-dot ${first ? 'current' : ''}"></div>
+        <div class="ver-info">
+          <div class="ver-time">${date}</div>
+          <div class="ver-cells">${d.cells || 0} cellule(s) remplie(s)</div>
+        </div>
+        <button class="ver-restore" onclick="restoreVersion('${doc.id}','${uid}')">Restaurer</button>`;
+      list.appendChild(item);
+      first = false;
+    });
+  } catch(e) { list.innerHTML = '<div style="color:var(--red)">Erreur</div>'; }
+}
+async function restoreVersion(verId, uid) {
+  if (!confirm('Restaurer cette version ? (l\'état actuel sera sauvegardé)')) return;
+  await saveNow();
+  try {
+    const fb = window._fb;
+    const ref = fb.doc(fb.db, 'sheetflow', uid, 'files', currentFileId, 'versions', verId);
+    const snap = await fb.getDoc(ref);
+    if (snap.exists()) {
+      sheets = JSON.parse(snap.data().sheets);
+      buildGrid(); renderTabs();
+      closePanel('panel-versions');
+      toast('Version restaurée ✓', 'ok');
+    }
+  } catch(e) { toast('Erreur', 'err'); }
+}
+window.showVersions = showVersions;
+window.restoreVersion = restoreVersion;
+
+// ══════════════════════════════════════════════════════
+//  SHARE
+// ══════════════════════════════════════════════════════
+async function showShare() {
+  openPanel('panel-share');
+  if (isGuest || !window._currentUser) {
+    document.getElementById('share-url').textContent = 'Connecte-toi pour partager';
+    return;
+  }
+  await saveNow();
+  const shareId = currentFileId || 'no-file';
+  const url = `${location.origin}${location.pathname}?share=${shareId}&uid=${window._fb.auth.currentUser.uid}`;
+  document.getElementById('share-url').textContent = url;
+  // Write share doc
+  try {
+    const fb = window._fb;
+    const uid = fb.auth.currentUser.uid;
+    await fb.setDoc(fb.doc(fb.db, 'sheetflow_shared', shareId), {
+      uid, fileId: currentFileId,
+      name: document.getElementById('file-name').value,
+      sharedAt: fb.serverTimestamp()
+    });
+  } catch(e) {}
+}
+function copyShareLink() {
+  const url = document.getElementById('share-url').textContent;
+  navigator.clipboard.writeText(url).then(() => {
+    const btn = document.getElementById('copy-link-btn');
+    btn.textContent = '✓ Copié !'; btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copier'; btn.classList.remove('copied'); }, 2000);
+    toast('Lien copié ! 🔗', 'ok');
+  });
+}
+window.showShare = showShare;
+window.copyShareLink = copyShareLink;
+
+// ══════════════════════════════════════════════════════
+//  EXPORT
+// ══════════════════════════════════════════════════════
+function showExport() { openPanel('panel-export'); }
+window.showExport = showExport;
+
+function exportAs(fmt) {
+  const name = document.getElementById('file-name').value || 'sheetflow';
+  if (fmt === 'csv') {
+    let csv = '';
+    for (let r = 0; r < ROWS; r++) {
+      const row = [];
+      let hasData = false;
+      for (let c = 0; c < COLS; c++) {
+        const v = computeDisplay(data()[cellKey(r, c)] || '', r, c);
+        if (v) hasData = true;
+        row.push(`"${String(v).replace(/"/g,'""')}"`);
+      }
+      if (hasData) csv += row.join(',') + '\n';
+    }
+    download(name + '.csv', csv, 'text/csv');
+  } else if (fmt === 'json') {
+    const obj = {};
+    for (const k in data()) {
+      const [r, c] = k.split('_').map(Number);
+      obj[cellLabel(r, c)] = computeDisplay(data()[k], r, c);
+    }
+    download(name + '.json', JSON.stringify(obj, null, 2), 'application/json');
+  } else if (fmt === 'txt') {
+    let txt = '';
+    for (let r = 0; r < ROWS; r++) {
+      let hasData = false; let row = '';
+      for (let c = 0; c < COLS; c++) {
+        const v = computeDisplay(data()[cellKey(r, c)] || '', r, c);
+        if (v) hasData = true;
+        row += String(v).padEnd(12);
+      }
+      if (hasData) txt += row.trimEnd() + '\n';
+    }
+    download(name + '.txt', txt, 'text/plain');
+  } else if (fmt === 'html') {
+    let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${name}</title>
+<style>body{font-family:Arial;} table{border-collapse:collapse;} td,th{border:1px solid #ccc;padding:4px 8px;min-width:80px;}</style></head><body>
+<h2>${name}</h2><table>`;
+    for (let r = 0; r < ROWS; r++) {
+      let hasData = false; let row = '<tr>';
+      for (let c = 0; c < COLS; c++) {
+        const v = computeDisplay(data()[cellKey(r, c)] || '', r, c);
+        if (v) hasData = true;
+        row += `<td>${v}</td>`;
+      }
+      if (hasData) html += row + '</tr>\n';
+    }
+    html += '</table></body></html>';
+    download(name + '.html', html, 'text/html');
+  }
+  closePanel('panel-export');
+  toast(`Exporté en ${fmt.toUpperCase()} ✓`, 'ok');
+}
+window.exportAs = exportAs;
+
+function download(filename, content, mime) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content], { type: mime }));
+  a.download = filename; a.click();
+}
+
+// ══════════════════════════════════════════════════════
+//  PANELS HELPERS
+// ══════════════════════════════════════════════════════
+function openPanel(id) { document.getElementById(id).classList.add('open'); }
+function closePanel(id) { document.getElementById(id).classList.remove('open'); }
+window.closePanel = closePanel;
+
+document.querySelectorAll('.panel-overlay').forEach(p => {
+  p.addEventListener('click', (e) => { if (e.target === p) p.classList.remove('open'); });
+});
+
+// ══════════════════════════════════════════════════════
+//  TOAST
+// ══════════════════════════════════════════════════════
+let toastTimer = null;
+function toast(msg, type = '') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'show' + (type ? ' ' + type : '');
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.className = '', 2500);
+}
+window.toast = toast;
+
+// ══════════════════════════════════════════════════════
+//  LOAD SHARED FILE
+// ══════════════════════════════════════════════════════
+async function checkSharedFile() {
+  const params = new URLSearchParams(location.search);
+  const shareId = params.get('share');
+  const uid = params.get('uid');
+  if (shareId && uid) {
+    continueGuest();
+    try {
+      const fb = window._fb;
+      const ref = fb.doc(fb.db, 'sheetflow', uid, 'files', shareId);
+      const snap = await fb.getDoc(ref);
+      if (snap.exists()) {
+        const d = snap.data();
+        sheets = JSON.parse(d.sheets);
+        currentFileId = shareId;
+        document.getElementById('file-name').value = (d.name || 'Partagé') + ' (lecture)';
+        buildGrid(); renderTabs();
+        toast('Fichier partagé ouvert 📊', 'ok');
+      }
+    } catch(e) {}
+  }
+}
+
+// ══════════════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════════════
+window.addEventListener('load', () => {
+  checkSharedFile();
+  // Load local if guest-like
+  const saved = localStorage.getItem('sheetflow_current');
+  if (saved) {
+    try {
+      const s = JSON.parse(saved);
+      // Just preload in background
+    } catch(e) {}
+  }
+  // File name auto-save
+  document.getElementById('file-name').addEventListener('input', scheduleSave);
+});
+</script>
+</body>
+</html>
